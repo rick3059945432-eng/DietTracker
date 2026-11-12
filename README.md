@@ -22,9 +22,11 @@
 
 ## 界面预览
 
-![DietTracker 功能概览](docs/screenshots/preview_showcase.jpg)
+| 今日饮食（记录中） | 今日饮食（初始看板） | AI 私教 | 健身小百科 |
+| :---: | :---: | :---: | :---: |
+| <img src="docs/screenshots/01_dashboard_active.jpg" width="210" alt="今日饮食-记录中" /> | <img src="docs/screenshots/02_dashboard_empty.jpg" width="210" alt="今日饮食-初始看板" /> | <img src="docs/screenshots/03_ai_coach.jpg" width="210" alt="AI私教" /> | <img src="docs/screenshots/04_wiki.jpg" width="210" alt="健身小百科" /> |
 
-*(注：以上为界面布局概览示意图；应用内支持自由更换深浅色主题及任意本地相册壁纸。)*
+*(应用内支持深浅色模式及自由更换任意本地相册全局壁纸与透明度。)*
 
 ---
 
