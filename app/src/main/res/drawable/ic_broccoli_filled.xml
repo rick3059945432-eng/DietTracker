@@ -1,0 +1,14 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- 西兰花花冠（实心） -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M7.5,13.8 C5.0,13.8 3.6,12.1 4.0,10.0 C4.3,8.5 5.5,7.5 7.0,7.3 C7.6,5.0 9.6,3.6 12.0,3.6 C14.4,3.6 16.4,5.0 17.0,7.3 C18.5,7.5 19.7,8.5 20.0,10.0 C20.4,12.1 19.0,13.8 16.5,13.8 C15.2,13.8 14.2,13.2 13.5,12.6 C12.9,13.3 11.1,13.3 10.5,12.6 C9.8,13.2 8.8,13.8 7.5,13.8 Z" />
+    <!-- 西兰花Y字茎干（留白分隔） -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M8.6,14.9 L10.5,14.9 L12.0,16.9 L13.5,14.9 L15.4,14.9 L13.8,20.6 L10.2,20.6 Z" />
+</vector>

@@ -1,0 +1,27 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- 哑铃（左右杠铃片 + 横杆） -->
+    <path
+        android:pathData="M4.2,5.8 L5.2,5.8 M16.8,5.8 L17.8,5.8 M5.4,4.2 L5.4,7.4 M7.4,3.4 L7.4,8.2 M14.6,3.4 L14.6,8.2 M16.6,4.2 L16.6,7.4 M7.4,5.8 L9.1,5.8 M12.9,5.8 L14.6,5.8"
+        android:strokeWidth="1.7"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <!-- 握哑铃拳头 -->
+    <path
+        android:pathData="M9.6,4.2 L12.4,4.2 C12.9,4.2 13.2,4.6 13.2,5.1 L13.2,7.1 C13.2,7.6 12.9,8.0 12.4,8.0 L9.6,8.0 C9.1,8.0 8.8,7.6 8.8,7.1 L8.8,5.1 C8.8,4.6 9.1,4.2 9.6,4.2 Z"
+        android:strokeWidth="1.7"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <!-- 曲臂二头肌轮廓 -->
+    <path
+        android:pathData="M9.6,8.0 L12.6,14.5 C11.6,12.2 8.8,12.1 7.0,13.9 C5.5,15.4 5.2,17.8 5.5,19.8 L15.6,19.8 C18.2,19.8 19.2,17.2 17.4,14.8 L12.6,8.0"
+        android:strokeWidth="1.7"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

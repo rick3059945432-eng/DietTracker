@@ -1,0 +1,27 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- 硬壳书本外框与书脊 -->
+    <path
+        android:pathData="M6.8,3.6 L18.2,3.6 C18.7,3.6 19.0,3.9 19.0,4.4 L19.0,17.2 L7.0,17.2 C5.9,17.2 5.0,18.0 5.0,19.0 L5.0,5.4 C5.0,4.4 5.8,3.6 6.8,3.6 Z"
+        android:strokeWidth="1.8"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <!-- 底部书页厚度与左书脊线 -->
+    <path
+        android:pathData="M5.0,18.8 C5.0,19.8 5.9,20.5 7.0,20.5 L18.6,20.5 M8.2,3.6 L8.2,17.2 M18.2,17.2 C17.6,18.3 17.6,19.4 18.4,20.5"
+        android:strokeWidth="1.8"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <!-- 右上角小书签 -->
+    <path
+        android:pathData="M13.8,3.6 L13.8,9.2 L15.3,7.9 L16.8,9.2 L16.8,3.6"
+        android:strokeWidth="1.6"
+        android:strokeColor="#000000"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

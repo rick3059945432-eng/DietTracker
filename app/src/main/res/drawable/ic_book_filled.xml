@@ -1,0 +1,17 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- 书脊与主体封面（挖空右上角书签形成极简留白） -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M6.8,3.5 L7.5,3.5 L7.5,17.0 C6.2,17.0 5.4,17.5 5.0,18.2 L5.0,5.3 C5.0,4.3 5.8,3.5 6.8,3.5 Z" />
+    <path
+        android:fillColor="#000000"
+        android:pathData="M8.5,3.5 L13.4,3.5 L13.4,9.6 L15.1,8.1 L16.8,9.6 L16.8,3.5 L18.3,3.5 C18.7,3.5 19.0,3.8 19.0,4.2 L19.0,17.0 L8.5,17.0 Z" />
+    <!-- 底部书页弧线 -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M7.0,18.1 L18.2,18.1 C17.7,18.9 17.8,19.7 18.4,20.5 L7.0,20.5 C5.8,20.5 5.0,19.8 5.0,19.0 C5.0,18.4 5.9,18.1 7.0,18.1 Z" />
+</vector>
