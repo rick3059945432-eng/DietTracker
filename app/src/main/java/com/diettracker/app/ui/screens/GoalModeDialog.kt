@@ -37,6 +37,10 @@ fun GoalModeDialog(
     var customProteinText by remember { mutableStateOf(ImageStorageUtils.formatOneDecimal(currentConfig.customProtein)) }
     var customFatText by remember { mutableStateOf(ImageStorageUtils.formatOneDecimal(currentConfig.customFat)) }
     var customCarbsText by remember { mutableStateOf(ImageStorageUtils.formatOneDecimal(currentConfig.customCarbs)) }
+    var customCalMinText by remember { mutableStateOf(currentConfig.customCaloriesMin.toString()) }
+    var customProteinMinText by remember { mutableStateOf(ImageStorageUtils.formatOneDecimal(currentConfig.customProteinMin)) }
+    var customFatMinText by remember { mutableStateOf(ImageStorageUtils.formatOneDecimal(currentConfig.customFatMin)) }
+    var customCarbsMinText by remember { mutableStateOf(ImageStorageUtils.formatOneDecimal(currentConfig.customCarbsMin)) }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -80,7 +84,11 @@ fun GoalModeDialog(
                                 customCalories = customCalText.toIntOrNull() ?: currentConfig.customCalories,
                                 customProtein = customProteinText.toFloatOrNull() ?: currentConfig.customProtein,
                                 customFat = customFatText.toFloatOrNull() ?: currentConfig.customFat,
-                                customCarbs = customCarbsText.toFloatOrNull() ?: currentConfig.customCarbs
+                                customCarbs = customCarbsText.toFloatOrNull() ?: currentConfig.customCarbs,
+                                customCaloriesMin = customCalMinText.toIntOrNull() ?: currentConfig.customCaloriesMin,
+                                customProteinMin = customProteinMinText.toFloatOrNull() ?: currentConfig.customProteinMin,
+                                customFatMin = customFatMinText.toFloatOrNull() ?: currentConfig.customFatMin,
+                                customCarbsMin = customCarbsMinText.toFloatOrNull() ?: currentConfig.customCarbsMin
                             )
                         )
 
@@ -130,10 +138,10 @@ fun GoalModeDialog(
                                 if (mode != DietGoalMode.CUSTOM) {
                                     Spacer(modifier = Modifier.height(6.dp))
                                     Text(
-                                        text = "今日上限：${previewTargets.caloriesTarget} kcal | " +
-                                            "蛋 ${ImageStorageUtils.formatOneDecimal(previewTargets.proteinTarget)}g · " +
-                                            "脂 ${ImageStorageUtils.formatOneDecimal(previewTargets.fatTarget)}g · " +
-                                            "碳 ${ImageStorageUtils.formatOneDecimal(previewTargets.carbsTarget)}g",
+                                        text = "建议范围：${previewTargets.caloriesMin} ~ ${previewTargets.caloriesTarget} kcal\n" +
+                                            "蛋 ${ImageStorageUtils.formatOneDecimal(previewTargets.proteinMin)}~${ImageStorageUtils.formatOneDecimal(previewTargets.proteinTarget)}g · " +
+                                            "脂 ${ImageStorageUtils.formatOneDecimal(previewTargets.fatMin)}~${ImageStorageUtils.formatOneDecimal(previewTargets.fatTarget)}g · " +
+                                            "碳 ${ImageStorageUtils.formatOneDecimal(previewTargets.carbsMin)}~${ImageStorageUtils.formatOneDecimal(previewTargets.carbsTarget)}g",
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.SemiBold,
                                         color = MaterialTheme.colorScheme.onSurface
@@ -147,27 +155,61 @@ fun GoalModeDialog(
                     if (selectedMode == DietGoalMode.CUSTOM) {
                         HorizontalDivider()
                         Text(
-                            text = "自定义每日摄入上限：",
+                            text = "自定义每日营养下限与目标上限：",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             color = GreenPrimary
                         )
-                        OutlinedTextField(
-                            value = customCalText,
-                            onValueChange = { customCalText = it },
-                            label = { Text("每日热量上限 (kcal)") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
+                            OutlinedTextField(
+                                value = customCalMinText,
+                                onValueChange = { customCalMinText = it },
+                                label = { Text("热量下限(kcal)") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                singleLine = true,
+                                modifier = Modifier.weight(1f)
+                            )
+                            OutlinedTextField(
+                                value = customCalText,
+                                onValueChange = { customCalText = it },
+                                label = { Text("热量上限(kcal)") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                singleLine = true,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = customProteinMinText,
+                                onValueChange = { customProteinMinText = it },
+                                label = { Text("蛋白下限(g)") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                singleLine = true,
+                                modifier = Modifier.weight(1f)
+                            )
                             OutlinedTextField(
                                 value = customProteinText,
                                 onValueChange = { customProteinText = it },
-                                label = { Text("蛋白(g)") },
+                                label = { Text("蛋白上限(g)") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                singleLine = true,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = customFatMinText,
+                                onValueChange = { customFatMinText = it },
+                                label = { Text("脂肪下限(g)") },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 singleLine = true,
                                 modifier = Modifier.weight(1f)
@@ -175,7 +217,20 @@ fun GoalModeDialog(
                             OutlinedTextField(
                                 value = customFatText,
                                 onValueChange = { customFatText = it },
-                                label = { Text("脂肪(g)") },
+                                label = { Text("脂肪上限(g)") },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                singleLine = true,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = customCarbsMinText,
+                                onValueChange = { customCarbsMinText = it },
+                                label = { Text("碳水下限(g)") },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 singleLine = true,
                                 modifier = Modifier.weight(1f)
@@ -183,7 +238,7 @@ fun GoalModeDialog(
                             OutlinedTextField(
                                 value = customCarbsText,
                                 onValueChange = { customCarbsText = it },
-                                label = { Text("碳水(g)") },
+                                label = { Text("碳水上限(g)") },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 singleLine = true,
                                 modifier = Modifier.weight(1f)
@@ -206,13 +261,26 @@ fun GoalModeDialog(
                     }
                     Button(
                         onClick = {
+                            val calTarget = (customCalText.toIntOrNull() ?: currentConfig.customCalories).coerceAtLeast(100)
+                            val calMin = (customCalMinText.toIntOrNull() ?: currentConfig.customCaloriesMin).coerceIn(50, calTarget)
+                            val pTarget = (customProteinText.toFloatOrNull() ?: currentConfig.customProtein).coerceAtLeast(1f)
+                            val pMin = (customProteinMinText.toFloatOrNull() ?: currentConfig.customProteinMin).coerceIn(1f, pTarget)
+                            val fTarget = (customFatText.toFloatOrNull() ?: currentConfig.customFat).coerceAtLeast(1f)
+                            val fMin = (customFatMinText.toFloatOrNull() ?: currentConfig.customFatMin).coerceIn(1f, fTarget)
+                            val cTarget = (customCarbsText.toFloatOrNull() ?: currentConfig.customCarbs).coerceAtLeast(1f)
+                            val cMin = (customCarbsMinText.toFloatOrNull() ?: currentConfig.customCarbsMin).coerceIn(1f, cTarget)
+
                             onConfirm(
                                 GoalConfig(
                                     mode = selectedMode,
-                                    customCalories = (customCalText.toIntOrNull() ?: currentConfig.customCalories).coerceAtLeast(100),
-                                    customProtein = (customProteinText.toFloatOrNull() ?: currentConfig.customProtein).coerceAtLeast(1f),
-                                    customFat = (customFatText.toFloatOrNull() ?: currentConfig.customFat).coerceAtLeast(1f),
-                                    customCarbs = (customCarbsText.toFloatOrNull() ?: currentConfig.customCarbs).coerceAtLeast(1f)
+                                    customCalories = calTarget,
+                                    customProtein = pTarget,
+                                    customFat = fTarget,
+                                    customCarbs = cTarget,
+                                    customCaloriesMin = calMin,
+                                    customProteinMin = pMin,
+                                    customFatMin = fMin,
+                                    customCarbsMin = cMin
                                 )
                             )
                         },

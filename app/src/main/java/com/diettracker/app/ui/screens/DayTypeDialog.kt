@@ -154,7 +154,7 @@ fun DayTypeDialog(
                             ) {
                                 Column(modifier = Modifier.padding(10.dp)) {
                                     Text(
-                                        text = "当前主模式：${goalConfig.mode.displayName}  →  目标热量 ${previewTargets.caloriesTarget} kcal",
+                                        text = "当前主模式：${goalConfig.mode.displayName}  →  热量 ${previewTargets.caloriesMin}~${previewTargets.caloriesTarget} kcal",
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -164,19 +164,19 @@ fun DayTypeDialog(
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
                                         Text(
-                                            text = "蛋白 ${ImageStorageUtils.formatOneDecimal(previewTargets.proteinTarget)}g",
+                                            text = "蛋白 ${ImageStorageUtils.formatOneDecimal(previewTargets.proteinMin)}~${ImageStorageUtils.formatOneDecimal(previewTargets.proteinTarget)}g",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = BlueAccent,
                                             fontWeight = FontWeight.Bold
                                         )
                                         Text(
-                                            text = "脂肪 ${ImageStorageUtils.formatOneDecimal(previewTargets.fatTarget)}g",
+                                            text = "脂肪 ${ImageStorageUtils.formatOneDecimal(previewTargets.fatMin)}~${ImageStorageUtils.formatOneDecimal(previewTargets.fatTarget)}g",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = OrangeWarning,
                                             fontWeight = FontWeight.Bold
                                         )
                                         Text(
-                                            text = "碳水 ${ImageStorageUtils.formatOneDecimal(previewTargets.carbsTarget)}g",
+                                            text = "碳水 ${ImageStorageUtils.formatOneDecimal(previewTargets.carbsMin)}~${ImageStorageUtils.formatOneDecimal(previewTargets.carbsTarget)}g",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = PurpleAccent,
                                             fontWeight = FontWeight.Bold

@@ -57,7 +57,11 @@ data class DailySummary(
     val customProtein: Float? = null,
     val customFat: Float? = null,
     val customCarbs: Float? = null,
-    val dayType: String? = null // TRAINING / REST / CHEAT
+    val dayType: String? = null, // TRAINING / REST / CHEAT
+    val customCaloriesMin: Int? = null,
+    val customProteinMin: Float? = null,
+    val customFatMin: Float? = null,
+    val customCarbsMin: Float? = null
 ) {
     fun toGoalConfig(fallback: GoalConfig): GoalConfig {
         val parsedMode = goalMode?.let {
@@ -68,7 +72,11 @@ data class DailySummary(
             customCalories = customCalories ?: fallback.customCalories,
             customProtein = customProtein ?: fallback.customProtein,
             customFat = customFat ?: fallback.customFat,
-            customCarbs = customCarbs ?: fallback.customCarbs
+            customCarbs = customCarbs ?: fallback.customCarbs,
+            customCaloriesMin = customCaloriesMin ?: fallback.customCaloriesMin,
+            customProteinMin = customProteinMin ?: fallback.customProteinMin,
+            customFatMin = customFatMin ?: fallback.customFatMin,
+            customCarbsMin = customCarbsMin ?: fallback.customCarbsMin
         )
     }
 
@@ -253,7 +261,11 @@ data class GoalConfig(
     val customCalories: Int = 2000,
     val customProtein: Float = 150f,
     val customFat: Float = 55f,
-    val customCarbs: Float = 200f
+    val customCarbs: Float = 200f,
+    val customCaloriesMin: Int = 1500,
+    val customProteinMin: Float = 100f,
+    val customFatMin: Float = 40f,
+    val customCarbsMin: Float = 120f
 )
 
 data class DailyNutritionTargets(
@@ -262,7 +274,11 @@ data class DailyNutritionTargets(
     val caloriesTarget: Int,
     val proteinTarget: Float,
     val fatTarget: Float,
-    val carbsTarget: Float
+    val carbsTarget: Float,
+    val caloriesMin: Int,
+    val proteinMin: Float,
+    val fatMin: Float,
+    val carbsMin: Float
 )
 
 private data class DayPlanRule(
@@ -362,13 +378,25 @@ fun calculateDailyNutritionTargets(
 ): DailyNutritionTargets {
     val mode = goalConfig.mode
     if (mode == DietGoalMode.CUSTOM) {
+        val targetCal = goalConfig.customCalories.coerceAtLeast(1)
+        val minCal = goalConfig.customCaloriesMin.coerceIn(1, targetCal)
+        val targetP = goalConfig.customProtein.coerceAtLeast(1f)
+        val minP = goalConfig.customProteinMin.coerceIn(1f, targetP)
+        val targetF = goalConfig.customFat.coerceAtLeast(1f)
+        val minF = goalConfig.customFatMin.coerceIn(1f, targetF)
+        val targetC = goalConfig.customCarbs.coerceAtLeast(1f)
+        val minC = goalConfig.customCarbsMin.coerceIn(1f, targetC)
         return DailyNutritionTargets(
             mode = mode,
             dayType = dayType,
-            caloriesTarget = goalConfig.customCalories.coerceAtLeast(1),
-            proteinTarget = goalConfig.customProtein.coerceAtLeast(1f),
-            fatTarget = goalConfig.customFat.coerceAtLeast(1f),
-            carbsTarget = goalConfig.customCarbs.coerceAtLeast(1f)
+            caloriesTarget = targetCal,
+            proteinTarget = targetP,
+            fatTarget = targetF,
+            carbsTarget = targetC,
+            caloriesMin = minCal,
+            proteinMin = minP,
+            fatMin = minF,
+            carbsMin = minC
         )
     }
 
@@ -387,12 +415,26 @@ fun calculateDailyNutritionTargets(
     val totalTargetCalories = (profile.maintenanceCalories + burnedCalories + rule.calorieOffset)
         .coerceAtLeast(800)
 
+    val targetProtein = (totalTargetCalories * rule.proteinRatio / 4f)
+    val targetFat = (totalTargetCalories * rule.fatRatio / 9f)
+    val targetCarbs = (totalTargetCalories * rule.carbsRatio / 4f)
+
+    // 科学下限保底计算：热量底线不低于82%目标或基代安全线；碳蛋脂最低保底保障护肌与内分泌健康
+    val minCalories = (totalTargetCalories * 0.82f).toInt().coerceAtLeast(800)
+    val minProtein = (targetProtein * 0.78f).coerceAtLeast(1f)
+    val minFat = (targetFat * 0.75f).coerceAtLeast(1f)
+    val minCarbs = (targetCarbs * 0.75f).coerceAtLeast(1f)
+
     return DailyNutritionTargets(
         mode = mode,
         dayType = dayType,
         caloriesTarget = totalTargetCalories,
-        proteinTarget = (totalTargetCalories * rule.proteinRatio / 4f),
-        fatTarget = (totalTargetCalories * rule.fatRatio / 9f),
-        carbsTarget = (totalTargetCalories * rule.carbsRatio / 4f)
+        proteinTarget = targetProtein,
+        fatTarget = targetFat,
+        carbsTarget = targetCarbs,
+        caloriesMin = minCalories,
+        proteinMin = minProtein,
+        fatMin = minFat,
+        carbsMin = minCarbs
     )
 }

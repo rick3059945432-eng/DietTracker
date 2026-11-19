@@ -246,7 +246,7 @@ fun CalorieDashboardCard(
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "目标 $targetCal kcal（基代 $baseMaintenanceCalories + 运动 $burnedCalories）",
+                        text = "目标 $targetCal kcal (底 ${targets.caloriesMin}) · 基代 $baseMaintenanceCalories + 运动 $burnedCalories",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -308,11 +308,26 @@ fun CalorieDashboardCard(
                         style = MaterialTheme.typography.titleLarge.copy(fontSize = 27.sp, fontWeight = FontWeight.ExtraBold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
+                    val calStatusText = when {
+                        remaining < 0 -> "已超标 ${-remaining} kcal"
+                        currentCalories < targets.caloriesMin -> "差 ${targets.caloriesMin - currentCalories} kcal 达下限"
+                        else -> "已达标 · 剩 $remaining kcal"
+                    }
+                    val calStatusColor = when {
+                        remaining < 0 -> RedDanger
+                        currentCalories < targets.caloriesMin -> MaterialTheme.colorScheme.onSurfaceVariant
+                        else -> GreenPrimary
+                    }
                     Text(
-                        text = if (remaining >= 0) "还可摄入 $remaining kcal" else "已超标 ${-remaining} kcal",
+                        text = calStatusText,
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (remaining >= 0) GreenPrimary else RedDanger,
+                        color = calStatusColor,
                         fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = "范围 ${targets.caloriesMin} ~ $targetCal kcal",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f)
                     )
                 }
             }
@@ -329,18 +344,21 @@ fun CalorieDashboardCard(
                 MacroRing(
                     name = "蛋白质",
                     currentGrams = protein,
+                    minGrams = targets.proteinMin,
                     targetGrams = targets.proteinTarget,
                     color = BlueAccent
                 )
                 MacroRing(
                     name = "脂肪",
                     currentGrams = fat,
+                    minGrams = targets.fatMin,
                     targetGrams = targets.fatTarget,
                     color = OrangeWarning
                 )
                 MacroRing(
                     name = "碳水",
                     currentGrams = carbs,
+                    minGrams = targets.carbsMin,
                     targetGrams = targets.carbsTarget,
                     color = PurpleAccent
                 )
@@ -353,15 +371,22 @@ fun CalorieDashboardCard(
 fun MacroRing(
     name: String,
     currentGrams: Float,
+    minGrams: Float,
     targetGrams: Float,
     color: Color
 ) {
     val safeTarget = targetGrams.coerceAtLeast(1f)
+    val safeMin = minGrams.coerceIn(0f, safeTarget)
     val rawRatio = currentGrams / safeTarget
     val progress = rawRatio.coerceIn(0f, 1f)
     val animatedProgress by animateFloatAsState(targetValue = progress, label = "MacroRing_$name")
     val isOver = currentGrams > safeTarget
-    val ringColor = if (isOver) RedDanger else color
+    val isReachMin = currentGrams >= safeMin
+    val ringColor = when {
+        isOver -> RedDanger
+        isReachMin -> GreenPrimary
+        else -> color
+    }
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
@@ -403,13 +428,25 @@ fun MacroRing(
             color = MaterialTheme.colorScheme.onSurface
         )
         Text(
-            text = if (isOver) {
-                "超 ${ImageStorageUtils.formatOneDecimal(currentGrams - safeTarget)}g"
-            } else {
-                "/ ${ImageStorageUtils.formatOneDecimal(safeTarget)}g"
-            },
-            style = MaterialTheme.typography.labelSmall,
-            color = if (isOver) RedDanger else MaterialTheme.colorScheme.onSurfaceVariant
+            text = "${ImageStorageUtils.formatOneDecimal(safeMin)} ~ ${ImageStorageUtils.formatOneDecimal(safeTarget)}g",
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        val statusText = when {
+            isOver -> "超 ${ImageStorageUtils.formatOneDecimal(currentGrams - safeTarget)}g"
+            isReachMin -> "已达标"
+            else -> "差 ${ImageStorageUtils.formatOneDecimal(safeMin - currentGrams)}g达底"
+        }
+        val statusColor = when {
+            isOver -> RedDanger
+            isReachMin -> GreenPrimary
+            else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+        }
+        Text(
+            text = statusText,
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+            fontWeight = FontWeight.Medium,
+            color = statusColor
         )
     }
 }

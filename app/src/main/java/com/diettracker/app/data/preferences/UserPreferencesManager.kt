@@ -99,7 +99,11 @@ class UserPreferencesManager(context: Context) {
             customCalories = prefs.getInt("customGoalCalories", 2000),
             customProtein = prefs.getFloat("customGoalProtein", 150f),
             customFat = prefs.getFloat("customGoalFat", 55f),
-            customCarbs = prefs.getFloat("customGoalCarbs", 200f)
+            customCarbs = prefs.getFloat("customGoalCarbs", 200f),
+            customCaloriesMin = prefs.getInt("customGoalCaloriesMin", 1500),
+            customProteinMin = prefs.getFloat("customGoalProteinMin", 100f),
+            customFatMin = prefs.getFloat("customGoalFatMin", 40f),
+            customCarbsMin = prefs.getFloat("customGoalCarbsMin", 120f)
         )
     }
 
@@ -110,6 +114,10 @@ class UserPreferencesManager(context: Context) {
             .putFloat("customGoalProtein", config.customProtein)
             .putFloat("customGoalFat", config.customFat)
             .putFloat("customGoalCarbs", config.customCarbs)
+            .putInt("customGoalCaloriesMin", config.customCaloriesMin)
+            .putFloat("customGoalProteinMin", config.customProteinMin)
+            .putFloat("customGoalFatMin", config.customFatMin)
+            .putFloat("customGoalCarbsMin", config.customCarbsMin)
             .apply()
         _goalConfig.value = config
     }

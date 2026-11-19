@@ -24,7 +24,7 @@ class DietDatabase private constructor(context: Context) : SQLiteOpenHelper(
     context.applicationContext,
     "diet_tracker.db",
     null,
-    6
+    7
 ) {
     private val dbChangeNotifier = MutableStateFlow(System.currentTimeMillis())
 
@@ -63,7 +63,11 @@ class DietDatabase private constructor(context: Context) : SQLiteOpenHelper(
                 customProtein REAL,
                 customFat REAL,
                 customCarbs REAL,
-                dayType TEXT
+                dayType TEXT,
+                customCaloriesMin INTEGER,
+                customProteinMin REAL,
+                customFatMin REAL,
+                customCarbsMin REAL
             )
             """.trimIndent()
         )
@@ -165,6 +169,20 @@ class DietDatabase private constructor(context: Context) : SQLiteOpenHelper(
         }
         if (oldVersion < 6) {
             createWikiArticlesTableAndSeed(db)
+        }
+        if (oldVersion < 7) {
+            val alterColumns = listOf(
+                "ALTER TABLE daily_summaries ADD COLUMN customCaloriesMin INTEGER",
+                "ALTER TABLE daily_summaries ADD COLUMN customProteinMin REAL",
+                "ALTER TABLE daily_summaries ADD COLUMN customFatMin REAL",
+                "ALTER TABLE daily_summaries ADD COLUMN customCarbsMin REAL"
+            )
+            alterColumns.forEach { sql ->
+                try {
+                    db.execSQL(sql)
+                } catch (_: Exception) {
+                }
+            }
         }
     }
 
@@ -317,6 +335,10 @@ class DietDatabase private constructor(context: Context) : SQLiteOpenHelper(
                     val customFIdx = c.getColumnIndex("customFat")
                     val customCIdx = c.getColumnIndex("customCarbs")
                     val dayTypeIdx = c.getColumnIndex("dayType")
+                    val customCalMinIdx = c.getColumnIndex("customCaloriesMin")
+                    val customPMinIdx = c.getColumnIndex("customProteinMin")
+                    val customFMinIdx = c.getColumnIndex("customFatMin")
+                    val customCMinIdx = c.getColumnIndex("customCarbsMin")
 
                     DailySummary(
                         date = date,
@@ -328,7 +350,11 @@ class DietDatabase private constructor(context: Context) : SQLiteOpenHelper(
                         customProtein = if (customPIdx >= 0 && !c.isNull(customPIdx)) c.getFloat(customPIdx) else null,
                         customFat = if (customFIdx >= 0 && !c.isNull(customFIdx)) c.getFloat(customFIdx) else null,
                         customCarbs = if (customCIdx >= 0 && !c.isNull(customCIdx)) c.getFloat(customCIdx) else null,
-                        dayType = if (dayTypeIdx >= 0 && !c.isNull(dayTypeIdx)) c.getString(dayTypeIdx) else null
+                        dayType = if (dayTypeIdx >= 0 && !c.isNull(dayTypeIdx)) c.getString(dayTypeIdx) else null,
+                        customCaloriesMin = if (customCalMinIdx >= 0 && !c.isNull(customCalMinIdx)) c.getInt(customCalMinIdx) else null,
+                        customProteinMin = if (customPMinIdx >= 0 && !c.isNull(customPMinIdx)) c.getFloat(customPMinIdx) else null,
+                        customFatMin = if (customFMinIdx >= 0 && !c.isNull(customFMinIdx)) c.getFloat(customFMinIdx) else null,
+                        customCarbsMin = if (customCMinIdx >= 0 && !c.isNull(customCMinIdx)) c.getFloat(customCMinIdx) else null
                     )
                 } else null
             }
@@ -346,6 +372,10 @@ class DietDatabase private constructor(context: Context) : SQLiteOpenHelper(
                 if (summary.customFat != null) put("customFat", summary.customFat) else putNull("customFat")
                 if (summary.customCarbs != null) put("customCarbs", summary.customCarbs) else putNull("customCarbs")
                 if (summary.dayType != null) put("dayType", summary.dayType) else putNull("dayType")
+                if (summary.customCaloriesMin != null) put("customCaloriesMin", summary.customCaloriesMin) else putNull("customCaloriesMin")
+                if (summary.customProteinMin != null) put("customProteinMin", summary.customProteinMin) else putNull("customProteinMin")
+                if (summary.customFatMin != null) put("customFatMin", summary.customFatMin) else putNull("customFatMin")
+                if (summary.customCarbsMin != null) put("customCarbsMin", summary.customCarbsMin) else putNull("customCarbsMin")
             }
             writableDatabase.insertWithOnConflict(
                 "daily_summaries",

@@ -132,6 +132,10 @@ fun HomeScreen(
             customProtein = if (goal.mode.name == "CUSTOM") goal.customProtein else current.customProtein,
             customFat = if (goal.mode.name == "CUSTOM") goal.customFat else current.customFat,
             customCarbs = if (goal.mode.name == "CUSTOM") goal.customCarbs else current.customCarbs,
+            customCaloriesMin = if (goal.mode.name == "CUSTOM") goal.customCaloriesMin else current.customCaloriesMin,
+            customProteinMin = if (goal.mode.name == "CUSTOM") goal.customProteinMin else current.customProteinMin,
+            customFatMin = if (goal.mode.name == "CUSTOM") goal.customFatMin else current.customFatMin,
+            customCarbsMin = if (goal.mode.name == "CUSTOM") goal.customCarbsMin else current.customCarbsMin,
             dayType = dayTypeOverride?.name ?: current.dayType
         )
     }
@@ -459,6 +463,10 @@ fun HomeScreen(
                             customProtein = if (goalToStamp.mode.name == "CUSTOM") (base.customProtein ?: goalToStamp.customProtein) else base.customProtein,
                             customFat = if (goalToStamp.mode.name == "CUSTOM") (base.customFat ?: goalToStamp.customFat) else base.customFat,
                             customCarbs = if (goalToStamp.mode.name == "CUSTOM") (base.customCarbs ?: goalToStamp.customCarbs) else base.customCarbs,
+                            customCaloriesMin = if (goalToStamp.mode.name == "CUSTOM") (base.customCaloriesMin ?: goalToStamp.customCaloriesMin) else base.customCaloriesMin,
+                            customProteinMin = if (goalToStamp.mode.name == "CUSTOM") (base.customProteinMin ?: goalToStamp.customProteinMin) else base.customProteinMin,
+                            customFatMin = if (goalToStamp.mode.name == "CUSTOM") (base.customFatMin ?: goalToStamp.customFatMin) else base.customFatMin,
+                            customCarbsMin = if (goalToStamp.mode.name == "CUSTOM") (base.customCarbsMin ?: goalToStamp.customCarbsMin) else base.customCarbsMin,
                             dayType = chosenDayType.name
                         )
                     )

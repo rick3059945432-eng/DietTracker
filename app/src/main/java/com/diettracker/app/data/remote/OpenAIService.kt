@@ -223,8 +223,11 @@ class OpenAIService {
                 【当前执行的饮食目标模式与大小天】
                 - 主模式：${targets.mode.displayName}（${targets.mode.description}）
                 - 日类型：${targets.dayType?.displayName ?: "未单独设定训练/休息日"}
-                - 目标热量上限：${targets.caloriesTarget} kcal（当前还剩：$remainingCal kcal）
-                - 三大营养素上限：蛋白质 ${String.format("%.1f", targets.proteinTarget)}g，脂肪 ${String.format("%.1f", targets.fatTarget)}g，碳水 ${String.format("%.1f", targets.carbsTarget)}g
+                - 目标热量区间：下限 ${targets.caloriesMin} kcal ~ 上限 ${targets.caloriesTarget} kcal（当前离上限还剩：$remainingCal kcal）
+                - 三大营养素区间（下限保底 ~ 目标上限）：
+                  • 蛋白质：${String.format("%.1f", targets.proteinMin)}g ~ ${String.format("%.1f", targets.proteinTarget)}g
+                  • 脂肪：${String.format("%.1f", targets.fatMin)}g ~ ${String.format("%.1f", targets.fatTarget)}g
+                  • 碳水：${String.format("%.1f", targets.carbsMin)}g ~ ${String.format("%.1f", targets.carbsTarget)}g
 
                 【今日已摄入饮食实时明细】
                 $mealsText
