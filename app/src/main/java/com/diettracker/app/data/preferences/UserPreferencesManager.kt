@@ -14,8 +14,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 class UserPreferencesManager(context: Context) {
+    private val appContext = context.applicationContext
     private val prefs: SharedPreferences =
-        context.getSharedPreferences("diet_tracker_prefs", Context.MODE_PRIVATE)
+        appContext.getSharedPreferences("diet_tracker_prefs", Context.MODE_PRIVATE)
 
     private val _userProfile = MutableStateFlow(loadUserProfile())
     val userProfile: StateFlow<UserProfile> = _userProfile.asStateFlow()
@@ -56,22 +57,25 @@ class UserPreferencesManager(context: Context) {
     }
 
     fun loadApiConfig(): ApiConfig {
+        val rawKey = prefs.getString("apiKey", "") ?: ""
+        val decryptedKey = SecureStorageHelper.decrypt(appContext, rawKey)
         return ApiConfig(
             baseUrl = prefs.getString("baseUrl", "https://api.openai.com/v1") ?: "https://api.openai.com/v1",
-            apiKey = prefs.getString("apiKey", "") ?: "",
+            apiKey = decryptedKey,
             chatModel = prefs.getString("chatModel", "gpt-4o-mini") ?: "gpt-4o-mini",
             visionModel = prefs.getString("visionModel", "gpt-4o") ?: "gpt-4o"
         )
     }
 
     fun saveApiConfig(config: ApiConfig) {
+        val encryptedKey = SecureStorageHelper.encrypt(appContext, config.apiKey.trim())
         prefs.edit()
             .putString("baseUrl", config.baseUrl.trimEnd('/'))
-            .putString("apiKey", config.apiKey.trim())
+            .putString("apiKey", encryptedKey)
             .putString("chatModel", config.chatModel.trim())
             .putString("visionModel", config.visionModel.trim())
             .apply()
-        _apiConfig.value = config
+        _apiConfig.value = config.copy(apiKey = config.apiKey.trim())
     }
 
     fun loadAppearanceConfig(): AppearanceConfig {

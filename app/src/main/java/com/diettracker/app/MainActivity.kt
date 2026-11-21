@@ -45,6 +45,7 @@ class MainActivity : ComponentActivity() {
                     }
                     composable("settings") {
                         SettingsScreen(
+                            db = database,
                             prefsManager = prefsManager,
                             openAIService = openAIService,
                             onBack = {

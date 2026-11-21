@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.Flow
 interface DailySummaryDao {
     fun getDailySummary(date: String): Flow<DailySummary?>
     suspend fun getDailySummarySync(date: String): DailySummary?
+    suspend fun getAllDailySummariesSync(): List<DailySummary>
     suspend fun insertOrUpdate(summary: DailySummary)
     fun getRecordedDateCalendarInfo(fallbackMode: DietGoalMode): Flow<Map<String, DateCalendarInfo>>
 }

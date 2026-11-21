@@ -306,6 +306,51 @@ class DietDatabase private constructor(context: Context) : SQLiteOpenHelper(
             list
         }
 
+        override suspend fun getAllMealsSync(): List<MealRecord> = withContext(Dispatchers.IO) {
+            val list = mutableListOf<MealRecord>()
+            val cursor = readableDatabase.rawQuery(
+                "SELECT * FROM meal_records ORDER BY date ASC, timestamp ASC",
+                null
+            )
+            cursor.use { c ->
+                val idIdx = c.getColumnIndex("id")
+                val dateIdx = c.getColumnIndex("date")
+                val mealTypeIdx = c.getColumnIndex("mealType")
+                val foodNameIdx = c.getColumnIndex("foodName")
+                val calIdx = c.getColumnIndex("calories")
+                val pIdx = c.getColumnIndex("protein")
+                val fIdx = c.getColumnIndex("fat")
+                val cIdx = c.getColumnIndex("carbs")
+                val noteIdx = c.getColumnIndex("note")
+                val imgIdx = c.getColumnIndex("imageUri")
+                val tsIdx = c.getColumnIndex("timestamp")
+
+                while (c.moveToNext()) {
+                    val mType = try {
+                        MealType.valueOf(c.getString(mealTypeIdx))
+                    } catch (e: Exception) {
+                        MealType.BREAKFAST
+                    }
+                    list.add(
+                        MealRecord(
+                            id = c.getLong(idIdx),
+                            date = c.getString(dateIdx),
+                            mealType = mType,
+                            foodName = c.getString(foodNameIdx),
+                            calories = c.getInt(calIdx),
+                            protein = c.getFloat(pIdx),
+                            fat = c.getFloat(fIdx),
+                            carbs = c.getFloat(cIdx),
+                            note = c.getString(noteIdx) ?: "",
+                            imageUri = c.getString(imgIdx),
+                            timestamp = c.getLong(tsIdx)
+                        )
+                    )
+                }
+            }
+            list
+        }
+
         override suspend fun replaceMealsForDateAndType(
             date: String,
             mealType: MealType,
@@ -413,6 +458,52 @@ class DietDatabase private constructor(context: Context) : SQLiteOpenHelper(
                     )
                 } else null
             }
+        }
+
+        override suspend fun getAllDailySummariesSync(): List<DailySummary> = withContext(Dispatchers.IO) {
+            val list = mutableListOf<DailySummary>()
+            val cursor = readableDatabase.rawQuery(
+                "SELECT * FROM daily_summaries ORDER BY date ASC",
+                null
+            )
+            cursor.use { c ->
+                val dateIdx = c.getColumnIndex("date")
+                val burnedIdx = c.getColumnIndex("burnedCalories")
+                val adviceIdx = c.getColumnIndex("aiAdvice")
+                val tsIdx = c.getColumnIndex("aiAdviceTimestamp")
+                val modeIdx = c.getColumnIndex("goalMode")
+                val customCalIdx = c.getColumnIndex("customCalories")
+                val customPIdx = c.getColumnIndex("customProtein")
+                val customFIdx = c.getColumnIndex("customFat")
+                val customCIdx = c.getColumnIndex("customCarbs")
+                val dayTypeIdx = c.getColumnIndex("dayType")
+                val customCalMinIdx = c.getColumnIndex("customCaloriesMin")
+                val customPMinIdx = c.getColumnIndex("customProteinMin")
+                val customFMinIdx = c.getColumnIndex("customFatMin")
+                val customCMinIdx = c.getColumnIndex("customCarbsMin")
+
+                while (c.moveToNext()) {
+                    list.add(
+                        DailySummary(
+                            date = c.getString(dateIdx),
+                            burnedCalories = c.getInt(burnedIdx),
+                            aiAdvice = c.getString(adviceIdx) ?: "",
+                            aiAdviceTimestamp = c.getLong(tsIdx),
+                            goalMode = if (modeIdx >= 0 && !c.isNull(modeIdx)) c.getString(modeIdx) else null,
+                            customCalories = if (customCalIdx >= 0 && !c.isNull(customCalIdx)) c.getInt(customCalIdx) else null,
+                            customProtein = if (customPIdx >= 0 && !c.isNull(customPIdx)) c.getFloat(customPIdx) else null,
+                            customFat = if (customFIdx >= 0 && !c.isNull(customFIdx)) c.getFloat(customFIdx) else null,
+                            customCarbs = if (customCIdx >= 0 && !c.isNull(customCIdx)) c.getFloat(customCIdx) else null,
+                            dayType = if (dayTypeIdx >= 0 && !c.isNull(dayTypeIdx)) c.getString(dayTypeIdx) else null,
+                            customCaloriesMin = if (customCalMinIdx >= 0 && !c.isNull(customCalMinIdx)) c.getInt(customCalMinIdx) else null,
+                            customProteinMin = if (customPMinIdx >= 0 && !c.isNull(customPMinIdx)) c.getFloat(customPMinIdx) else null,
+                            customFatMin = if (customFMinIdx >= 0 && !c.isNull(customFMinIdx)) c.getFloat(customFMinIdx) else null,
+                            customCarbsMin = if (customCMinIdx >= 0 && !c.isNull(customCMinIdx)) c.getFloat(customCMinIdx) else null
+                        )
+                    )
+                }
+            }
+            list
         }
 
         override suspend fun insertOrUpdate(summary: DailySummary) = withContext(Dispatchers.IO) {

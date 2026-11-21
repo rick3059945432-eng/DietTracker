@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DietTracker 隐私政策与非医疗免责声明</title>
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --primary-light: #ecfdf5;
+            --text-main: #1f2937;
+            --text-secondary: #4b5563;
+            --bg-page: #f9fafb;
+            --bg-card: #ffffff;
+            --border-color: #e5e7eb;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --primary: #10b981;
+                --primary-dark: #059669;
+                --primary-light: #064e3b;
+                --text-main: #f3f4f6;
+                --text-secondary: #9ca3af;
+                --bg-page: #111827;
+                --bg-card: #1f2937;
+                --border-color: #374151;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            line-height: 1.7;
+            padding: 24px 16px;
+        }
+
+        .container {
+            max-width: 760px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+            padding: 24px 0 12px;
+        }
+
+        .badge {
+            display: inline-block;
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .update-date {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        h2 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        p {
+            font-size: 14.5px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        p:last-child {
+            margin-bottom: 0;
+        }
+
+        ul {
+            padding-left: 20px;
+            margin-bottom: 12px;
+            color: var(--text-secondary);
+            font-size: 14.5px;
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+
+        .highlight-box {
+            background-color: var(--primary-light);
+            border-left: 4px solid var(--primary);
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin: 14px 0;
+            font-size: 14px;
+            color: var(--text-main);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 32px 0 16px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="badge">开源 · 本地优先 · 零数据收集</div>
+            <h1>DietTracker 隐私政策与非医疗免责声明</h1>
+            <div class="update-date">最新生效日期：2026 年 11 月 21 日 | 适用于 DietTracker 应用全体用户</div>
+        </header>
+
+        <section class="card">
+            <h2>🛡️ 1. 核心隐私原则：本地离线与零追踪承诺</h2>
+            <p><strong>DietTracker 是一款完全「本地优先（Local-First）、无后台服务器」的原生 Android 应用。</strong></p>
+            <ul>
+                <li><strong>本地私有沙盒存储</strong>：你的全部个人资料（昵称、头像、身高、体重、生理年龄）、饮食记录、体重历史、自适应代谢周复盘数据以及自定义食物库，均直接保存在你手机本地的 SQLite 数据库和私有沙盒内。</li>
+                <li><strong>绝无远程开发者服务器</strong>：应用不架设任何开发者服务端，不设注册登录账号体系，不保存、不上传、不上报任何用户的个人隐私。</li>
+                <li><strong>拒绝任何商业隐私追踪</strong>：应用内完全无任何第三方广告 SDK，不读取通讯录，不请求精确定位，不采集设备唯一识别码（IMEI / OAID / MAC）。</li>
+                <li><strong>数据备份完全自主</strong>：通过「导出数据备份（JSON）」导出的文件由你自行选择存储至本地目录或个人私有云盘，应用无权在后台自动同步或上传。</li>
+            </ul>
+        </section>
+
+        <section class="card">
+            <h2>🔒 2. 自接 API（BYOK）使用与通信安全</h2>
+            <p>软件内提供的「AI 私教对话」、「AI 拍照识图估算热量」、「AI 提取配料表」等扩展功能采用 <strong>BYOK（Bring Your Own Key，自带密钥）</strong>模式运行：</p>
+            <ul>
+                <li><strong>本地硬件加密</strong>：你所填写的 API Key 和 Base URL 采用基于 Android 本机特征的对称密文加密保存在本地私有空间，杜绝明文探查。</li>
+                <li><strong>端到端直连请求</strong>：当且仅当你主动触发相关 AI 功能时，应用将直接且仅向你指定的 API Base URL 端点发送网络请求，<strong>中间绝不存在任何开发者架设的中转代理服务器</strong>。</li>
+                <li><strong>开发者不可知</strong>：开发者既无法获取你的 API 密钥，也无法窥探你的对话内容或识图照片。</li>
+            </ul>
+        </section>
+
+        <section class="card">
+            <h2>⚠️ 3. 非医疗用途与健康免责声明</h2>
+            <div class="highlight-box">
+                重要提示：DietTracker 是一个生活习惯记录与健康自律辅助工具，并非医疗器械，亦不提供临床医疗诊断或处方服务。
+            </div>
+            <ul>
+                <li><strong>理论估算性质</strong>：应用内所有的能量与宏量计算（包括 Mifflin-St Jeor 基础代谢公式、指数移动平均 EMA 体重平滑趋势、自适应能量守恒反推 TDEE 算法）以及通过第三方 AI 接口生成的营养建议，均为基于通用营养学模型的数学估算值，仅供个人日常记录与自我管理参考。</li>
+                <li><strong>不构成医疗建议</strong>：上述数据、分析和建议绝不构成任何临床诊断、医疗处方或专业医学诊疗意见。</li>
+                <li><strong>特殊生理状况注意</strong>：如果你患有糖尿病、心脑血管疾病、甲状腺疾病、进食障碍，或处于孕期、哺乳期及重大疾病康复期，请务必在开展任何饮食结构大幅改变或热量赤字减脂前，咨询专业执业医师或注册营养师的意见。</li>
+            </ul>
+        </section>
+
+        <section class="card">
+            <h2>📱 4. 权限使用说明（透明合规）</h2>
+            <p>DietTracker 仅在用户主动触发特定功能时动态申请必要权限，绝不索取任何冗余权限：</p>
+            <ul>
+                <li><strong>相机权限（CAMERA）</strong>：仅当你主动点击“现场拍照”识别食物或拍摄食品成分表时使用，拍摄的照片由系统直接返回应用私有内存，不外传。</li>
+                <li><strong>图片/相册选择</strong>：采用系统标准的 Photo Picker / Storage Access Framework，应用仅能访问你单次手动挑选的那张壁纸或食物图片，绝无权限全盘扫描读取你的整个相册。</li>
+                <li><strong>网络权限（INTERNET）</strong>：仅用于向你所配置的第三方 API 发起直接通信，以及加载你手动填入的网络图片。脱机离线状态下核心记录功能 100% 正常运行。</li>
+            </ul>
+        </section>
+
+        <section class="card">
+            <h2>📄 5. 政策更新与联系方式</h2>
+            <p>本项目为开放透明的开源软件，遵循 MIT 开源许可证。若本隐私政策有任何调整，均会在 GitHub 开源仓库进行公开版本变更记录。</p>
+            <p>如对本隐私政策有任何疑问、建议或代码审计需求，欢迎通过以下官方渠道交流：</p>
+            <p>• GitHub 仓库：<a href="https://github.com/rick3059945432-eng/DietTracker" target="_blank">https://github.com/rick3059945432-eng/DietTracker</a><br>
+            • 开发者联系邮箱：<a href="mailto:rick3059945432@gmail.com">rick3059945432@gmail.com</a></p>
+        </section>
+
+        <footer class="footer">
+            <p>© 2026 DietTracker Project. Released under the MIT License.</p>
+        </footer>
+    </div>
+</body>
+</html>

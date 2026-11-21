@@ -29,6 +29,7 @@ captures/
 # Keystore & signing secrets
 *.jks
 *.keystore
+keystore.properties
 
 # Logs & OS junk
 *.log

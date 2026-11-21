@@ -1,5 +1,8 @@
 package com.diettracker.app.ui.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -18,10 +21,16 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -36,18 +45,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
+import com.diettracker.app.data.local.BackupDataUtils
+import com.diettracker.app.data.local.DietDatabase
+import com.diettracker.app.data.local.ImportResult
 import com.diettracker.app.data.preferences.UserPreferencesManager
 import com.diettracker.app.data.remote.OpenAIService
 import com.diettracker.app.model.ApiConfig
 import com.diettracker.app.model.AppearanceConfig
 import com.diettracker.app.model.UserProfile
 import com.diettracker.app.ui.theme.GreenPrimary
+import com.diettracker.app.ui.theme.OrangeWarning
 import com.diettracker.app.util.ImageStorageUtils
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
+    db: DietDatabase,
     prefsManager: UserPreferencesManager,
     openAIService: OpenAIService,
     onBack: () -> Unit
@@ -82,6 +99,56 @@ fun SettingsScreen(
     var isFetchingModels by remember { mutableStateOf(false) }
     var modelFetchStatus by remember { mutableStateOf<String?>(null) }
     var pickingModelFor by remember { mutableStateOf<String?>(null) } // "chat" or "vision"
+
+    // 备份、恢复与隐私状态
+    var showPrivacyDialog by remember { mutableStateOf(false) }
+    var importConfirmJson by remember { mutableStateOf<String?>(null) }
+    var importResultDialog by remember { mutableStateOf<ImportResult?>(null) }
+    var isExporting by remember { mutableStateOf(false) }
+
+    // 导出文件保存 Launcher
+    val exportBackupLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri != null) {
+            isExporting = true
+            coroutineScope.launch {
+                try {
+                    val jsonStr = BackupDataUtils.exportBackupJson(db, prefsManager)
+                    context.contentResolver.openOutputStream(uri)?.use { os ->
+                        os.write(jsonStr.toByteArray(Charsets.UTF_8))
+                    }
+                    isExporting = false
+                    Toast.makeText(context, "数据备份已成功导出！", Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    isExporting = false
+                    Toast.makeText(context, "导出失败：${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    // 导入文件选择 Launcher
+    val importBackupLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            coroutineScope.launch {
+                try {
+                    val content = context.contentResolver.openInputStream(uri)?.use { ins ->
+                        ins.bufferedReader().readText()
+                    }
+                    if (!content.isNullOrBlank()) {
+                        importConfirmJson = content
+                    } else {
+                        Toast.makeText(context, "所选备份文件内容为空", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(context, "读取备份文件失败：${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
 
     fun fetchModels(openPickerTarget: String? = null) {
         isFetchingModels = true
@@ -446,6 +513,30 @@ fun SettingsScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(GreenPrimary.copy(alpha = 0.10f))
+                            .padding(horizontal = 10.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = null,
+                            tint = GreenPrimary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = "本地安全承诺：你填写的 API Key 仅在当前设备本地私有空间密文保存。应用无后台中转服务器，绝不收集、上传或转发你的密钥信息。",
+                            fontSize = 11.sp,
+                            lineHeight = 15.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
                     Spacer(modifier = Modifier.height(10.dp))
                     FilledTonalButton(
                         onClick = { fetchModels() },
@@ -534,6 +625,163 @@ fun SettingsScreen(
                 }
             }
 
+            // 数据备份与迁移（JSON）卡片
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(text = "📦", fontSize = 16.sp)
+                        Text(
+                            text = "数据备份与迁移 (JSON)",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Text(
+                        text = "将手机本地的饮食记录、体重历史、自写笔记与自定义食物库完整导出为标准 JSON 备份文件，换机、重装或定期归档轻松无忧。",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 16.sp
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                val timeSuffix = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
+                                exportBackupLauncher.launch("DietTracker_Backup_$timeSuffix.json")
+                            },
+                            enabled = !isExporting,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            if (isExporting) {
+                                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("导出中...")
+                            } else {
+                                Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("导出备份")
+                            }
+                        }
+
+                        FilledTonalButton(
+                            onClick = {
+                                importBackupLauncher.launch(arrayOf("application/json", "text/*"))
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Default.Upload, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("恢复备份")
+                        }
+                    }
+                }
+            }
+
+            // 关于与隐私政策卡片
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(text = "ℹ️", fontSize = 16.sp)
+                        Text(
+                            text = "关于与隐私合规",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "当前版本",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "DietTracker v2.7 (Build 18)",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable {
+                                val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                cm.setPrimaryClip(ClipData.newPlainText("github_url", "https://github.com/rick3059945432-eng/DietTracker"))
+                                Toast.makeText(context, "已复制 GitHub 开源地址", Toast.LENGTH_SHORT).show()
+                            }
+                            .padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "开源协议",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = "MIT License (点击复制链接)",
+                                fontSize = 12.sp,
+                                color = GreenPrimary
+                            )
+                            Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(13.dp), tint = GreenPrimary)
+                        }
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+
+                    OutlinedButton(
+                        onClick = { showPrivacyDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.Security, contentDescription = null, modifier = Modifier.size(16.dp), tint = GreenPrimary)
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("查看《隐私政策与免责声明》", color = GreenPrimary, fontWeight = FontWeight.Medium)
+                    }
+                }
+            }
+
             // 底部保存按钮
             Button(
                 onClick = {
@@ -607,6 +855,60 @@ fun SettingsScreen(
                 prefsManager.saveGoalConfig(newConfig)
                 showGoalModeDialog = false
                 Toast.makeText(context, "已应用「${newConfig.mode.displayName}」", Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
+
+    if (showPrivacyDialog) {
+        PrivacyDisclaimerDialog(onDismiss = { showPrivacyDialog = false })
+    }
+
+    if (importConfirmJson != null) {
+        AlertDialog(
+            onDismissRequest = { importConfirmJson = null },
+            title = { Text("确认恢复数据？", fontWeight = FontWeight.Bold) },
+            text = { Text("从该备份文件导入将合并现有饮食记录、体重历史与食物库。确定继续吗？") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val json = importConfirmJson
+                        importConfirmJson = null
+                        if (json != null) {
+                            coroutineScope.launch {
+                                val result = BackupDataUtils.importBackupJson(json, db, prefsManager)
+                                importResultDialog = result
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary)
+                ) {
+                    Text("确认导入")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { importConfirmJson = null }) {
+                    Text("取消")
+                }
+            }
+        )
+    }
+
+    if (importResultDialog != null) {
+        val result = importResultDialog!!
+        AlertDialog(
+            onDismissRequest = { importResultDialog = null },
+            title = {
+                Text(
+                    text = if (result.isSuccess) "备份恢复成功" else "导入失败",
+                    fontWeight = FontWeight.Bold,
+                    color = if (result.isSuccess) GreenPrimary else MaterialTheme.colorScheme.error
+                )
+            },
+            text = { Text(result.message) },
+            confirmButton = {
+                Button(onClick = { importResultDialog = null }) {
+                    Text("好的")
+                }
             }
         )
     }
