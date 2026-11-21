@@ -54,13 +54,18 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.diettracker.app.data.local.MealDao
 import com.diettracker.app.data.local.WeightDao
+import com.diettracker.app.data.preferences.UserPreferencesManager
+import com.diettracker.app.model.FatLossRate
 import com.diettracker.app.model.UserProfile
 import com.diettracker.app.model.WEIGHT_TAGS
 import com.diettracker.app.model.WeightRecord
+import com.diettracker.app.model.WeeklyReviewStatus
 import com.diettracker.app.ui.theme.GreenPrimary
 import com.diettracker.app.ui.theme.OrangeWarning
 import com.diettracker.app.ui.theme.RedDanger
+import com.diettracker.app.util.AdaptiveTdeeCalculator
 import com.diettracker.app.util.WeightTrendUtils
 import com.diettracker.app.util.WeightTrendUtils.FeedbackLevel
 import com.diettracker.app.util.WeightTrendUtils.TrendPoint
@@ -83,6 +88,8 @@ enum class ChartTimeRange(val label: String, val days: Int?) {
 @Composable
 fun WeightPage(
     weightDao: WeightDao,
+    mealDao: MealDao,
+    prefsManager: UserPreferencesManager,
     profile: UserProfile,
     currentDateStr: String,
     onSelectDate: (String) -> Unit
@@ -90,8 +97,47 @@ fun WeightPage(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
+    // 饮食数据与热量目标设置
+    val goalConfig by prefsManager.goalConfig.collectAsState()
+    val currentFatLossRate by prefsManager.fatLossRate.collectAsState()
+
+    var past7DaysIntakeMap by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    var allRecordedDietDates by remember { mutableStateOf<Set<String>>(emptySet()) }
+
     // 观察所有体重记录（按日期升序）
     val allRecords by weightDao.getAllWeightRecords().collectAsState(initial = emptyList())
+
+    // 动态查询过去 7 天摄入与所有有饮食记录日期
+    LaunchedEffect(currentDateStr, allRecords.size) {
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val past7Dates = AdaptiveTdeeCalculator.getPastDatesList(currentDateStr, 7, dateFormat)
+        val startD = past7Dates.first()
+        val endD = past7Dates.last()
+        past7DaysIntakeMap = mealDao.getDailyCaloriesBetweenDatesSync(startD, endD)
+        allRecordedDietDates = mealDao.getAllRecordedDietDatesSync()
+    }
+
+    // 周复盘状态评估
+    val weeklyReviewStatus = remember(
+        currentDateStr,
+        profile,
+        currentFatLossRate,
+        goalConfig.customCalories,
+        allRecordedDietDates,
+        allRecords,
+        past7DaysIntakeMap
+    ) {
+        AdaptiveTdeeCalculator.evaluateWeeklyReview(
+            todayStr = currentDateStr,
+            profile = profile,
+            rate = currentFatLossRate,
+            currentTargetCalories = goalConfig.customCalories,
+            allDatesWithDiet = allRecordedDietDates,
+            allWeightRecords = allRecords,
+            past7DaysIntakeMap = past7DaysIntakeMap,
+            past14DaysWeightRecords = allRecords.takeLast(14)
+        )
+    }
 
     // 计算 EMA 平滑趋势序列
     val trendPoints = remember(allRecords) {
@@ -126,6 +172,7 @@ fun WeightPage(
 
     // 对话框状态
     var showEntryDialog by remember { mutableStateOf(false) }
+    var showWeeklyReviewDialog by remember { mutableStateOf(false) }
     var editingRecord by remember { mutableStateOf<WeightRecord?>(null) }
     var recordToDelete by remember { mutableStateOf<WeightRecord?>(null) }
     var selectedChartRange by remember { mutableStateOf(ChartTimeRange.DAYS_30) }
@@ -143,7 +190,17 @@ fun WeightPage(
             onSelectDate = onSelectDate
         )
 
-        // 2. 核心指标卡片：原始体重 vs EMA 趋势 vs 7日变化
+        // 2. 周级复盘与自适应 TDEE 校准入口卡片
+        WeeklyReviewEntryCard(
+            status = weeklyReviewStatus,
+            onClick = {
+                if (weeklyReviewStatus is WeeklyReviewStatus.Ready) {
+                    showWeeklyReviewDialog = true
+                }
+            }
+        )
+
+        // 3. 核心指标卡片：原始体重 vs EMA 趋势 vs 7日变化
         WeightMetricsCard(
             currentDateStr = currentDateStr,
             todayRecord = todayRecord,
@@ -203,6 +260,23 @@ fun WeightPage(
         )
     }
 
+    // 周复盘报告弹窗
+    if (showWeeklyReviewDialog && weeklyReviewStatus is WeeklyReviewStatus.Ready) {
+        WeeklyReviewDialog(
+            report = (weeklyReviewStatus as WeeklyReviewStatus.Ready).report,
+            currentRate = currentFatLossRate,
+            onRateChanged = { newRate ->
+                prefsManager.saveFatLossRate(newRate)
+            },
+            onDismiss = { showWeeklyReviewDialog = false },
+            onApplyTargetCalories = { newTarget ->
+                prefsManager.applyCalorieAdjustment(newTarget)
+                showWeeklyReviewDialog = false
+                Toast.makeText(context, "已成功应用建议每日热量：$newTarget kcal！", Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
+
     // 删除确认弹窗
     if (recordToDelete != null) {
         AlertDialog(
@@ -232,6 +306,189 @@ fun WeightPage(
                 }
             }
         )
+    }
+}
+
+/**
+ * 周级复盘与自适应 TDEE 校准入口卡片
+ */
+@Composable
+private fun WeeklyReviewEntryCard(
+    status: WeeklyReviewStatus,
+    onClick: () -> Unit
+) {
+    when (status) {
+        is WeeklyReviewStatus.ColdStart -> {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(text = "🌱", fontSize = 14.sp)
+                            Text(
+                                text = "自适应代谢校准进行中",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        Text(
+                            text = "${status.daysSinceFirstRecord} / ${status.requiredDays} 天",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = GreenPrimary
+                        )
+                    }
+
+                    LinearProgressIndicator(
+                        progress = { (status.daysSinceFirstRecord.toFloat() / status.requiredDays.toFloat()).coerceIn(0f, 1f) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp)),
+                        color = GreenPrimary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+
+                    Text(
+                        text = "前两周易受初期水分流失影响，当前正在积累基准数据，满 14 天后将解锁精准周复盘。",
+                        fontSize = 11.sp,
+                        lineHeight = 15.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        is WeeklyReviewStatus.InsufficientData -> {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = OrangeWarning.copy(alpha = 0.08f)),
+                border = androidx.compose.foundation.BorderStroke(1.dp, OrangeWarning.copy(alpha = 0.25f))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = "📊", fontSize = 18.sp)
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            text = "本周还需补录数据即可生成复盘",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        val dietGap = (status.requiredDietDays - status.validDietDays).coerceAtLeast(0)
+                        val weightGap = (status.requiredWeightDays - status.validWeightDays).coerceAtLeast(0)
+                        val tips = buildList {
+                            if (dietGap > 0) add("饮食还需 $dietGap 天")
+                            if (weightGap > 0) add("体重还需 $weightGap 天")
+                        }.joinToString("，")
+
+                        Text(
+                            text = "近7天有记录：饮食 ${status.validDietDays}/5 天，体重 ${status.validWeightDays}/3 天（$tips），充足数据方能杜绝代谢误算。",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+
+        is WeeklyReviewStatus.Ready -> {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onClick() },
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = GreenPrimary.copy(alpha = 0.12f)),
+                border = androidx.compose.foundation.BorderStroke(1.dp, GreenPrimary.copy(alpha = 0.35f))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(GreenPrimary, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(text = "✨", fontSize = 16.sp)
+                        }
+
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                text = "本周代谢与减脂复盘已就绪",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            val adj = status.report.calorieAdjustment
+                            val adjText = when {
+                                adj > 0 -> "建议回调 +$adj kcal"
+                                adj < 0 -> "建议微调 $adj kcal"
+                                else -> "节奏极佳，保持当前"
+                            }
+                            Text(
+                                text = "估算真实 TDEE ${status.report.estimatedTDEE} kcal · $adjText",
+                                fontSize = 11.sp,
+                                color = GreenPrimary,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            text = "查看报告",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = GreenPrimary
+                        )
+                        Icon(
+                            imageVector = Icons.Default.ArrowForwardIos,
+                            contentDescription = null,
+                            tint = GreenPrimary,
+                            modifier = Modifier.size(12.dp)
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import com.diettracker.app.model.ApiConfig
 import com.diettracker.app.model.AppearanceConfig
 import com.diettracker.app.model.DietGoalMode
+import com.diettracker.app.model.FatLossRate
 import com.diettracker.app.model.GoalConfig
 import com.diettracker.app.model.UserProfile
 import com.diettracker.app.util.ImageStorageUtils
@@ -27,6 +28,9 @@ class UserPreferencesManager(context: Context) {
 
     private val _goalConfig = MutableStateFlow(loadGoalConfig())
     val goalConfig: StateFlow<GoalConfig> = _goalConfig.asStateFlow()
+
+    private val _fatLossRate = MutableStateFlow(loadFatLossRate())
+    val fatLossRate: StateFlow<FatLossRate> = _fatLossRate.asStateFlow()
 
     fun loadUserProfile(): UserProfile {
         return UserProfile(
@@ -120,6 +124,48 @@ class UserPreferencesManager(context: Context) {
             .putFloat("customGoalCarbsMin", config.customCarbsMin)
             .apply()
         _goalConfig.value = config
+    }
+
+    fun loadFatLossRate(): FatLossRate {
+        val name = prefs.getString("fatLossRate", FatLossRate.STANDARD.name)
+        return try {
+            FatLossRate.valueOf(name ?: FatLossRate.STANDARD.name)
+        } catch (_: Exception) {
+            FatLossRate.STANDARD
+        }
+    }
+
+    fun saveFatLossRate(rate: FatLossRate) {
+        prefs.edit().putString("fatLossRate", rate.name).apply()
+        _fatLossRate.value = rate
+    }
+
+    /**
+     * 采纳自适应微调目标：按 30%蛋 / 25%脂 / 45%碳 黄金比例同步更新克数并存为自定义模式
+     */
+    fun applyCalorieAdjustment(newCaloriesTarget: Int) {
+        val current = _goalConfig.value
+        val pTarget = (newCaloriesTarget * 0.30f / 4f)
+        val fTarget = (newCaloriesTarget * 0.25f / 9f)
+        val cTarget = (newCaloriesTarget * 0.45f / 4f)
+
+        val minCal = (newCaloriesTarget * 0.82f).toInt().coerceAtLeast(800)
+        val minP = (pTarget * 0.78f).coerceAtLeast(1f)
+        val minF = (fTarget * 0.75f).coerceAtLeast(1f)
+        val minC = (cTarget * 0.75f).coerceAtLeast(1f)
+
+        val updatedConfig = current.copy(
+            mode = DietGoalMode.CUSTOM,
+            customCalories = newCaloriesTarget,
+            customProtein = pTarget,
+            customFat = fTarget,
+            customCarbs = cTarget,
+            customCaloriesMin = minCal,
+            customProteinMin = minP,
+            customFatMin = minF,
+            customCarbsMin = minC
+        )
+        saveGoalConfig(updatedConfig)
     }
 
     fun hasPromptedDayTypeToday(todayStr: String): Boolean {

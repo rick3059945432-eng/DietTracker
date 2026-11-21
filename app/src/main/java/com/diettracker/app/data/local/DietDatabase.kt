@@ -335,6 +335,36 @@ class DietDatabase private constructor(context: Context) : SQLiteOpenHelper(
             }
             notifyDataChanged()
         }
+
+        override suspend fun getDailyCaloriesBetweenDatesSync(startDate: String, endDate: String): Map<String, Int> = withContext(Dispatchers.IO) {
+            val result = mutableMapOf<String, Int>()
+            val cursor = readableDatabase.rawQuery(
+                "SELECT date, SUM(calories) FROM meal_records WHERE date BETWEEN ? AND ? GROUP BY date",
+                arrayOf(startDate, endDate)
+            )
+            cursor.use { c ->
+                while (c.moveToNext()) {
+                    val date = c.getString(0)
+                    val sumCal = c.getInt(1)
+                    result[date] = sumCal
+                }
+            }
+            result
+        }
+
+        override suspend fun getAllRecordedDietDatesSync(): Set<String> = withContext(Dispatchers.IO) {
+            val result = mutableSetOf<String>()
+            val cursor = readableDatabase.rawQuery(
+                "SELECT DISTINCT date FROM meal_records WHERE calories > 0",
+                null
+            )
+            cursor.use { c ->
+                while (c.moveToNext()) {
+                    result.add(c.getString(0))
+                }
+            }
+            result
+        }
     }
 
     private val _dailySummaryDao = object : DailySummaryDao {

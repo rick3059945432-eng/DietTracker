@@ -300,6 +300,8 @@ fun HomeScreen(
                     AppPage.WEIGHT_TRACKER -> {
                         WeightPage(
                             weightDao = weightDao,
+                            mealDao = mealDao,
+                            prefsManager = prefsManager,
                             profile = profile,
                             currentDateStr = currentDateStr,
                             onSelectDate = { targetDate ->

@@ -12,8 +12,8 @@ android {
         applicationId = "com.diettracker.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 17
-        versionName = "2.6"
+        versionCode = 18
+        versionName = "2.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -57,5 +57,6 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.coil.compose)
 
+    testImplementation("junit:junit:4.13.2")
     debugImplementation(libs.androidx.ui.tooling)
 }

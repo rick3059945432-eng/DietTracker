@@ -11,4 +11,6 @@ interface MealDao {
     suspend fun deleteMeal(meal: MealRecord)
     suspend fun getMealsByDateSync(date: String): List<MealRecord>
     suspend fun replaceMealsForDateAndType(date: String, mealType: MealType, sourceMeals: List<MealRecord>)
+    suspend fun getDailyCaloriesBetweenDatesSync(startDate: String, endDate: String): Map<String, Int>
+    suspend fun getAllRecordedDietDatesSync(): Set<String>
 }
