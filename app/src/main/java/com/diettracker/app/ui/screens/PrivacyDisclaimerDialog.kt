@@ -97,7 +97,7 @@ fun PrivacyDisclaimerDialog(
                     DisclaimerSection(
                         icon = Icons.Default.Lock,
                         title = "1. 本地存储与零数据收集承诺",
-                        content = "「屿衡减脂」（IsleBalance）是一款完全「本地优先、无后台服务器」的纯净工具应用：\n" +
+                        content = "「屿衡减脂」（IsleBalance DietTracker）是一款完全「本地优先、无后台服务器」的纯净工具应用：\n" +
                                 "• 你的所有饮食记录、体重数据、生理指标、自写笔记均加密保存在当前手机本地数据库（SQLite）中；\n" +
                                 "• 我们不搭建任何开发者远程服务器，不设用户账号体系，不采集任何设备识别码（IMEI/OAID）、通讯录、精确定位或用户个人隐私行为；\n" +
                                 "• 你所导出的 JSON 备份文件完全由你自己掌控，可自由存储于手机本地或个人网盘。"

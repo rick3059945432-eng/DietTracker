@@ -1,10 +1,10 @@
-# DietTracker
+# IsleBalance DietTracker (屿衡减脂)
 
-一个**本地优先、无后台服务器、高度自定义**的原生 Android 饮食管理与 AI 健身记录应用（Kotlin + Jetpack Compose Material 3）。
+**屿衡减脂（IsleBalance DietTracker）** 是一款**本地优先、无后台服务器、高度自定义**的原生 Android 饮食管理与趋势追踪应用（Kotlin + Jetpack Compose Material 3）。
 
-从每日热量与碳蛋脂配比、训练日/休息日动态计划，到千焦一键换算、跨天快捷复制复吃、自定义壁纸与专属小百科——打造顺手、不上传隐私的个人健身饮食中枢。
+从每日热量与碳蛋脂配比、训练日/休息日动态计划，到千焦一键换算、跨天快捷复制复吃、EMA 指数移动平均趋势线、自适应 TDEE 代谢校准与专属小百科——打造顺手、绝对不上传隐私的个人健康中枢。
 
-> 📥 **直接下载安装**：前往右侧 **[Releases 页面](https://github.com/rick3059945432-eng/DietTracker/releases)** 下载最新 `DietTracker.apk` 即可在 Android 手机安装体验（最低支持 Android 8.0 / API 26）。
+> 📥 **直接下载安装**：前往右侧 **[Releases 页面](https://github.com/rick3059945432-eng/IsleBalance-DietTracker/releases)** 下载最新 `IsleBalance-DietTracker.apk` 即可在 Android 手机安装体验（最低支持 Android 8.0 / API 26）。
 
 ---
 
@@ -71,7 +71,7 @@
 
 ### 自行编译源码
 ```bash
-git clone https://github.com/rick3059945432-eng/DietTracker.git
+git clone https://github.com/rick3059945432-eng/IsleBalance-DietTracker.git
 ```
 使用 **Android Studio**（建议 Ladybug 或更新版本，搭配 JDK 17）打开目录等待 Gradle 同步完成即可运行，或执行：
 ```bash

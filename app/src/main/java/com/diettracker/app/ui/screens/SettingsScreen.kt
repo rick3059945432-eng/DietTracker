@@ -666,7 +666,7 @@ fun SettingsScreen(
                         OutlinedButton(
                             onClick = {
                                 val timeSuffix = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
-                                exportBackupLauncher.launch("DietTracker_Backup_$timeSuffix.json")
+                                exportBackupLauncher.launch("IsleBalance_Backup_$timeSuffix.json")
                             },
                             enabled = !isExporting,
                             modifier = Modifier.weight(1f),
@@ -797,7 +797,7 @@ fun SettingsScreen(
                             .clip(RoundedCornerShape(8.dp))
                             .clickable {
                                 val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                cm.setPrimaryClip(ClipData.newPlainText("github_url", "https://github.com/rick3059945432-eng/DietTracker"))
+                                cm.setPrimaryClip(ClipData.newPlainText("github_url", "https://github.com/rick3059945432-eng/IsleBalance-DietTracker"))
                                 Toast.makeText(context, "已复制 GitHub 开源地址", Toast.LENGTH_SHORT).show()
                             }
                             .padding(vertical = 4.dp),

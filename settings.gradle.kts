@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "DietTracker"
+rootProject.name = "IsleBalance-DietTracker"
 include(":app")
