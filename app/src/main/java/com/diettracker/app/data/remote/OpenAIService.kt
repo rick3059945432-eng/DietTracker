@@ -457,48 +457,144 @@ class OpenAIService {
         throw (lastError ?: Exception("API 请求失败"))
     }
 
+    /**
+     * 从 AI 原始回复中提取 JSON 字符串。
+     * 兼容以下几种常见格式：
+     * 1. 纯 JSON：直接返回
+     * 2. ```json ... ``` 或 ``` ... ``` 包裹
+     * 3. 正文中嵌入 JSON 块（提取第一个 { } 对象）
+     */
+    private fun extractJsonString(rawText: String): String {
+        var text = rawText.trim()
+
+        // 尝试剥离 markdown 代码块（支持多行、```json 或 ```）
+        val fenceRegex = Regex("```(?:json)?\\s*([\\s\\S]*?)```", RegexOption.IGNORE_CASE)
+        val fenceMatch = fenceRegex.find(text)
+        if (fenceMatch != null) {
+            text = fenceMatch.groupValues[1].trim()
+        }
+
+        // 如果还不是以 { 开头，尝试找第一个 { 到最后一个 }
+        if (!text.startsWith("{")) {
+            val start = text.indexOf('{')
+            val end = text.lastIndexOf('}')
+            if (start != -1 && end > start) {
+                text = text.substring(start, end + 1)
+            }
+        }
+
+        return text.trim()
+    }
+
     private fun cleanJsonPayload(rawText: String): JsonObject {
-        var clean = rawText.trim()
-        if (clean.startsWith("```json")) {
-            clean = clean.removePrefix("```json")
-        } else if (clean.startsWith("```")) {
-            clean = clean.removePrefix("```")
+        return try {
+            val jsonStr = extractJsonString(rawText)
+            gson.fromJson(jsonStr, JsonObject::class.java) ?: JsonObject()
+        } catch (e: Exception) {
+            JsonObject() // 解析彻底失败时返回空对象，让调用方使用默认值
         }
-        if (clean.endsWith("```")) {
-            clean = clean.removeSuffix("```")
-        }
-        return gson.fromJson(clean.trim(), JsonObject::class.java)
     }
 
     private fun parseNutritionJson(rawText: String): FoodNutritionEstimate {
-        val obj = cleanJsonPayload(rawText)
-        return FoodNutritionEstimate(
-            foodName = stripMarkdown(obj.get("foodName")?.asString ?: "自定义食物"),
-            calories = obj.get("calories")?.asInt ?: 0,
-            protein = obj.get("protein")?.asFloat ?: 0f,
-            fat = obj.get("fat")?.asFloat ?: 0f,
-            carbs = obj.get("carbs")?.asFloat ?: 0f,
-            explanation = stripMarkdown(obj.get("explanation")?.asString ?: "")
-        )
+        return try {
+            val obj = cleanJsonPayload(rawText)
+            // 兼容 food_name / foodName 两种字段名
+            val foodName = obj.get("foodName")?.asString
+                ?: obj.get("food_name")?.asString
+                ?: "未知食物"
+            // 兼容 calorie / calories / energy 等字段名，并安全转换
+            val calories = obj.get("calories")?.asIntSafe()
+                ?: obj.get("calorie")?.asIntSafe()
+                ?: obj.get("energy")?.asIntSafe()
+                ?: 0
+            val protein = obj.get("protein")?.asFloatSafe() ?: 0f
+            val fat = obj.get("fat")?.asFloatSafe() ?: 0f
+            val carbs = obj.get("carbs")?.asFloatSafe()
+                ?: obj.get("carbohydrates")?.asFloatSafe()
+                ?: obj.get("carbohydrate")?.asFloatSafe()
+                ?: 0f
+            val explanation = obj.get("explanation")?.asString
+                ?: obj.get("note")?.asString
+                ?: ""
+            FoodNutritionEstimate(
+                foodName = stripMarkdown(foodName),
+                calories = calories,
+                protein = protein,
+                fat = fat,
+                carbs = carbs,
+                explanation = stripMarkdown(explanation)
+            )
+        } catch (e: Exception) {
+            // 兜底：解析完全失败时返回带说明的空记录，不崩溃
+            FoodNutritionEstimate(
+                foodName = "识别失败",
+                calories = 0,
+                protein = 0f,
+                fat = 0f,
+                carbs = 0f,
+                explanation = "AI 返回格式异常，请手动填写营养数据。"
+            )
+        }
     }
 
     private fun parseCustomFoodJson(rawText: String): CustomFoodEstimate {
-        val obj = cleanJsonPayload(rawText)
-        val unitStr = obj.get("unitType")?.asString ?: "PER_100G"
-        val unitType = try {
-            FoodUnitType.valueOf(unitStr)
+        return try {
+            val obj = cleanJsonPayload(rawText)
+            val unitStr = obj.get("unitType")?.asString ?: "PER_100G"
+            val unitType = try {
+                FoodUnitType.valueOf(unitStr.uppercase().trim())
+            } catch (e: Exception) {
+                FoodUnitType.PER_100G
+            }
+            val foodName = obj.get("foodName")?.asString
+                ?: obj.get("food_name")?.asString
+                ?: "包装食品"
+            val calories = obj.get("calories")?.asIntSafe()
+                ?: obj.get("calorie")?.asIntSafe()
+                ?: obj.get("energy")?.asIntSafe()
+                ?: 0
+            val protein = obj.get("protein")?.asFloatSafe() ?: 0f
+            val fat = obj.get("fat")?.asFloatSafe() ?: 0f
+            val carbs = obj.get("carbs")?.asFloatSafe()
+                ?: obj.get("carbohydrates")?.asFloatSafe()
+                ?: obj.get("carbohydrate")?.asFloatSafe()
+                ?: 0f
+            val explanation = obj.get("explanation")?.asString
+                ?: obj.get("note")?.asString
+                ?: ""
+            CustomFoodEstimate(
+                foodName = stripMarkdown(foodName),
+                unitType = unitType,
+                calories = calories,
+                protein = protein,
+                fat = fat,
+                carbs = carbs,
+                explanation = stripMarkdown(explanation)
+            )
         } catch (e: Exception) {
-            FoodUnitType.PER_100G
+            CustomFoodEstimate(
+                foodName = "识别失败",
+                unitType = FoodUnitType.PER_100G,
+                calories = 0,
+                protein = 0f,
+                fat = 0f,
+                carbs = 0f,
+                explanation = "AI 返回格式异常，请手动填写营养数据。"
+            )
         }
-        return CustomFoodEstimate(
-            foodName = stripMarkdown(obj.get("foodName")?.asString ?: "包装食品"),
-            unitType = unitType,
-            calories = obj.get("calories")?.asInt ?: 0,
-            protein = obj.get("protein")?.asFloat ?: 0f,
-            fat = obj.get("fat")?.asFloat ?: 0f,
-            carbs = obj.get("carbs")?.asFloat ?: 0f,
-            explanation = stripMarkdown(obj.get("explanation")?.asString ?: "")
-        )
+    }
+
+    // com.google.gson.JsonElement 的安全数值转换扩展，防止非数字字符串抛出异常
+    private fun com.google.gson.JsonElement.asIntSafe(): Int? = try {
+        this.asInt
+    } catch (e: Exception) {
+        this.asString.trim().toFloatOrNull()?.toInt()
+    }
+
+    private fun com.google.gson.JsonElement.asFloatSafe(): Float? = try {
+        this.asFloat
+    } catch (e: Exception) {
+        this.asString.trim().toFloatOrNull()
     }
 
     companion object {
