@@ -13,7 +13,10 @@ import com.diettracker.app.model.DietGoalMode
 import com.diettracker.app.model.FoodUnitType
 import com.diettracker.app.model.MealRecord
 import com.diettracker.app.model.MealType
+import com.diettracker.app.model.WeightRecord
 import com.diettracker.app.model.WikiArticle
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,9 +27,11 @@ class DietDatabase private constructor(context: Context) : SQLiteOpenHelper(
     context.applicationContext,
     "diet_tracker.db",
     null,
-    7
+    8
 ) {
     private val dbChangeNotifier = MutableStateFlow(System.currentTimeMillis())
+    private val gson = Gson()
+    private val stringListType = object : TypeToken<List<String>>() {}.type
 
     private fun notifyDataChanged() {
         dbChangeNotifier.value = System.currentTimeMillis()
@@ -75,6 +80,23 @@ class DietDatabase private constructor(context: Context) : SQLiteOpenHelper(
         createCustomFoodsTable(db)
         createChatMessagesTable(db)
         createWikiArticlesTableAndSeed(db)
+        createWeightRecordsTable(db)
+    }
+
+    private fun createWeightRecordsTable(db: SQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS weight_records (
+                date TEXT PRIMARY KEY,
+                weight REAL NOT NULL,
+                tags TEXT,
+                waist REAL,
+                bodyFat REAL,
+                note TEXT,
+                timestamp INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
     }
 
     private fun createCustomFoodsTable(db: SQLiteDatabase) {
@@ -183,6 +205,9 @@ class DietDatabase private constructor(context: Context) : SQLiteOpenHelper(
                 } catch (_: Exception) {
                 }
             }
+        }
+        if (oldVersion < 8) {
+            createWeightRecordsTable(db)
         }
     }
 
@@ -641,11 +666,161 @@ class DietDatabase private constructor(context: Context) : SQLiteOpenHelper(
         }
     }
 
+    private val _weightDao = object : WeightDao {
+        override fun getAllWeightRecords(): Flow<List<WeightRecord>> {
+            return dbChangeNotifier.map {
+                getAllWeightRecordsSync()
+            }
+        }
+
+        override suspend fun getAllWeightRecordsSync(): List<WeightRecord> = withContext(Dispatchers.IO) {
+            val list = mutableListOf<WeightRecord>()
+            val cursor = readableDatabase.rawQuery(
+                "SELECT * FROM weight_records ORDER BY date ASC",
+                null
+            )
+            cursor.use { c ->
+                val dateIdx = c.getColumnIndex("date")
+                val weightIdx = c.getColumnIndex("weight")
+                val tagsIdx = c.getColumnIndex("tags")
+                val waistIdx = c.getColumnIndex("waist")
+                val bodyFatIdx = c.getColumnIndex("bodyFat")
+                val noteIdx = c.getColumnIndex("note")
+                val tsIdx = c.getColumnIndex("timestamp")
+
+                while (c.moveToNext()) {
+                    val tags = if (tagsIdx >= 0 && !c.isNull(tagsIdx)) {
+                        try {
+                            gson.fromJson<List<String>>(c.getString(tagsIdx), stringListType) ?: emptyList()
+                        } catch (_: Exception) {
+                            emptyList()
+                        }
+                    } else emptyList()
+
+                    list.add(
+                        WeightRecord(
+                            date = c.getString(dateIdx),
+                            weight = c.getFloat(weightIdx),
+                            tags = tags,
+                            waist = if (waistIdx >= 0 && !c.isNull(waistIdx)) c.getFloat(waistIdx) else null,
+                            bodyFat = if (bodyFatIdx >= 0 && !c.isNull(bodyFatIdx)) c.getFloat(bodyFatIdx) else null,
+                            note = if (noteIdx >= 0 && !c.isNull(noteIdx)) c.getString(noteIdx) ?: "" else "",
+                            timestamp = if (tsIdx >= 0) c.getLong(tsIdx) else System.currentTimeMillis()
+                        )
+                    )
+                }
+            }
+            list
+        }
+
+        override fun getWeightRecordByDate(date: String): Flow<WeightRecord?> {
+            return dbChangeNotifier.map {
+                getWeightRecordByDateSync(date)
+            }
+        }
+
+        override suspend fun getWeightRecordByDateSync(date: String): WeightRecord? = withContext(Dispatchers.IO) {
+            val cursor = readableDatabase.rawQuery(
+                "SELECT * FROM weight_records WHERE date = ?",
+                arrayOf(date)
+            )
+            cursor.use { c ->
+                if (c.moveToNext()) {
+                    val weightIdx = c.getColumnIndex("weight")
+                    val tagsIdx = c.getColumnIndex("tags")
+                    val waistIdx = c.getColumnIndex("waist")
+                    val bodyFatIdx = c.getColumnIndex("bodyFat")
+                    val noteIdx = c.getColumnIndex("note")
+                    val tsIdx = c.getColumnIndex("timestamp")
+
+                    val tags = if (tagsIdx >= 0 && !c.isNull(tagsIdx)) {
+                        try {
+                            gson.fromJson<List<String>>(c.getString(tagsIdx), stringListType) ?: emptyList()
+                        } catch (_: Exception) {
+                            emptyList()
+                        }
+                    } else emptyList()
+
+                    WeightRecord(
+                        date = date,
+                        weight = c.getFloat(weightIdx),
+                        tags = tags,
+                        waist = if (waistIdx >= 0 && !c.isNull(waistIdx)) c.getFloat(waistIdx) else null,
+                        bodyFat = if (bodyFatIdx >= 0 && !c.isNull(bodyFatIdx)) c.getFloat(bodyFatIdx) else null,
+                        note = if (noteIdx >= 0 && !c.isNull(noteIdx)) c.getString(noteIdx) ?: "" else "",
+                        timestamp = if (tsIdx >= 0) c.getLong(tsIdx) else System.currentTimeMillis()
+                    )
+                } else null
+            }
+        }
+
+        override suspend fun getLatestWeightRecordSync(): WeightRecord? = withContext(Dispatchers.IO) {
+            val cursor = readableDatabase.rawQuery(
+                "SELECT * FROM weight_records ORDER BY date DESC LIMIT 1",
+                null
+            )
+            cursor.use { c ->
+                if (c.moveToNext()) {
+                    val dateIdx = c.getColumnIndex("date")
+                    val weightIdx = c.getColumnIndex("weight")
+                    val tagsIdx = c.getColumnIndex("tags")
+                    val waistIdx = c.getColumnIndex("waist")
+                    val bodyFatIdx = c.getColumnIndex("bodyFat")
+                    val noteIdx = c.getColumnIndex("note")
+                    val tsIdx = c.getColumnIndex("timestamp")
+
+                    val tags = if (tagsIdx >= 0 && !c.isNull(tagsIdx)) {
+                        try {
+                            gson.fromJson<List<String>>(c.getString(tagsIdx), stringListType) ?: emptyList()
+                        } catch (_: Exception) {
+                            emptyList()
+                        }
+                    } else emptyList()
+
+                    WeightRecord(
+                        date = c.getString(dateIdx),
+                        weight = c.getFloat(weightIdx),
+                        tags = tags,
+                        waist = if (waistIdx >= 0 && !c.isNull(waistIdx)) c.getFloat(waistIdx) else null,
+                        bodyFat = if (bodyFatIdx >= 0 && !c.isNull(bodyFatIdx)) c.getFloat(bodyFatIdx) else null,
+                        note = if (noteIdx >= 0 && !c.isNull(noteIdx)) c.getString(noteIdx) ?: "" else "",
+                        timestamp = if (tsIdx >= 0) c.getLong(tsIdx) else System.currentTimeMillis()
+                    )
+                } else null
+            }
+        }
+
+        override suspend fun insertOrUpdate(record: WeightRecord) = withContext(Dispatchers.IO) {
+            val values = ContentValues().apply {
+                put("date", record.date)
+                put("weight", record.weight)
+                if (record.tags.isNotEmpty()) put("tags", gson.toJson(record.tags)) else putNull("tags")
+                if (record.waist != null) put("waist", record.waist) else putNull("waist")
+                if (record.bodyFat != null) put("bodyFat", record.bodyFat) else putNull("bodyFat")
+                put("note", record.note)
+                put("timestamp", record.timestamp)
+            }
+            writableDatabase.insertWithOnConflict(
+                "weight_records",
+                null,
+                values,
+                SQLiteDatabase.CONFLICT_REPLACE
+            )
+            notifyDataChanged()
+        }
+
+        override suspend fun deleteWeightRecord(date: String) = withContext(Dispatchers.IO) {
+            writableDatabase.delete("weight_records", "date = ?", arrayOf(date))
+            notifyDataChanged()
+        }
+    }
+
     fun mealDao(): MealDao = _mealDao
     fun dailySummaryDao(): DailySummaryDao = _dailySummaryDao
     fun customFoodDao(): CustomFoodDao = _customFoodDao
     fun chatDao(): ChatDao = _chatDao
     fun wikiDao(): WikiDao = _wikiDao
+    fun weightDao(): WeightDao = _weightDao
 
     companion object {
         @Volatile

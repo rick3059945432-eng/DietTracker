@@ -3,7 +3,8 @@ package com.diettracker.app.model
 enum class AppPage(val title: String) {
     DIET_DASHBOARD("今日饮食"),
     AI_COACH("AI私教"),
-    FITNESS_WIKI("小百科")
+    FITNESS_WIKI("小百科"),
+    WEIGHT_TRACKER("体重")
     // 预留后续继续扩展新活页位置
 }
 
@@ -438,3 +439,21 @@ fun calculateDailyNutritionTargets(
         carbsMin = minCarbs
     )
 }
+
+data class WeightRecord(
+    val date: String, // Format: YYYY-MM-DD
+    val weight: Float, // kg
+    val tags: List<String> = emptyList(),
+    val waist: Float? = null, // cm
+    val bodyFat: Float? = null, // %
+    val note: String = "",
+    val timestamp: Long = System.currentTimeMillis()
+)
+
+val WEIGHT_TAGS = listOf(
+    "高盐/聚餐",
+    "熬夜/睡眠差",
+    "大重量训练",
+    "消化不佳",
+    "水肿/生理波动"
+)

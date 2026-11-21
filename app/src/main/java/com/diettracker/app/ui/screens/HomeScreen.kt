@@ -75,6 +75,7 @@ fun HomeScreen(
     val summaryDao = db.dailySummaryDao()
     val chatDao = db.chatDao()
     val wikiDao = db.wikiDao()
+    val weightDao = db.weightDao()
 
     val mealRecords by mealDao.getMealsByDate(currentDateStr).collectAsState(initial = emptyList())
     val dailySummary by summaryDao.getDailySummary(currentDateStr).collectAsState(initial = null)
@@ -293,6 +294,21 @@ fun HomeScreen(
                             apiConfig = apiConfig,
                             openAIService = openAIService,
                             onNavigateToSettings = onNavigateToSettings
+                        )
+                    }
+
+                    AppPage.WEIGHT_TRACKER -> {
+                        WeightPage(
+                            weightDao = weightDao,
+                            profile = profile,
+                            currentDateStr = currentDateStr,
+                            onSelectDate = { targetDate ->
+                                try {
+                                    val cal = Calendar.getInstance()
+                                    dateFormat.parse(targetDate)?.let { cal.time = it }
+                                    selectedCalendar = cal
+                                } catch (_: Exception) {}
+                            }
                         )
                     }
                 }
@@ -551,6 +567,7 @@ private fun DietBottomNavigationBar(
                         AppPage.DIET_DASHBOARD -> R.drawable.ic_broccoli_outline to R.drawable.ic_broccoli_filled
                         AppPage.AI_COACH -> R.drawable.ic_arm_dumbbell_outline to R.drawable.ic_arm_dumbbell_filled
                         AppPage.FITNESS_WIKI -> R.drawable.ic_book_outline to R.drawable.ic_book_filled
+                        AppPage.WEIGHT_TRACKER -> R.drawable.ic_scale_outline to R.drawable.ic_scale_filled
                     }
 
                     Column(
