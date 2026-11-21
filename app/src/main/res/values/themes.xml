@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.DietTracker" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- 冷启动平滑无闪烁主题：底色设为深邃墨青 #10282C，与品牌图标色泽完全一致 -->
+    <style name="Theme.DietTracker" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+        <item name="android:statusBarColor">#10282C</item>
+        <item name="android:navigationBarColor">#10282C</item>
+    </style>
 </resources>

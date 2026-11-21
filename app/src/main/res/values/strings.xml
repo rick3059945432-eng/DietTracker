@@ -1,3 +1,5 @@
 <resources>
-    <string name="app_name">DietTracker</string>
+    <string name="app_name">屿衡</string>
+    <string name="app_full_name">屿衡减脂</string>
+    <string name="app_slogan">数据只留本机 · 看见真实趋势</string>
 </resources>
